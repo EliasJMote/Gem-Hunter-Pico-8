@@ -1,5 +1,5 @@
 Gem Hunter
-Version 0.4.0
+Version 0.4.1
 
 Copyright © 2019 Elias Mote
 Copyright © 2019 Roc Studios
@@ -22,7 +22,13 @@ strictly prohibited, and a violation of copyright.
 II. Version History
 
 ------------------------
-V0.4.0 - Current Version
+V0.4.1 - Current Version
+------------------------
+- Added animation to blocks being eliminated
+- Combos of any number are now supported
+
+------------------------
+V0.4.0
 ------------------------
 - Added additional collision detection to the columns
 - Combos up to three can be performed
