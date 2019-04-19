@@ -1,5 +1,5 @@
 Gem Hunter
-Version 0.4.2
+Version 0.4.3
 
 Copyright © 2019 Elias Mote
 Copyright © 2019 Roc Studios
@@ -22,7 +22,13 @@ strictly prohibited, and a violation of copyright.
 II. Version History
 
 ------------------------
-V0.4.2 - Current Version
+V0.4.3 - Current Version
+------------------------
+-- Two player mode works (on two controllers)
+-- Title screen added
+
+------------------------
+V0.4.2
 ------------------------
 -- Two player mode works (on one controller)
 

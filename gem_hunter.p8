@@ -146,9 +146,10 @@ function clear_rows(p)
 	end
 end
 
-function init_player(p, x)
+function init_player(p, x, player)
 
 	-- setup player values
+	p.player = player or 0
 	p.timer = 0
 	p.clear_process = false
 	p.del_blks = {}
@@ -174,7 +175,6 @@ function init_player(p, x)
 			}
 
 	return p
-
 end
 
 function update_player(p, x)
@@ -183,7 +183,7 @@ function update_player(p, x)
 
 	-- normal gameplay
 	if not (p.clear_process) then
-		if(p.timer == 30 or btnp(3)) then
+		if(p.timer == 30 or btnp(3, p.player)) then
 			if(p.column.y < 32+72 and p.well[(p.column.x-x)/8+1][p.column.y/8+3] == 0) then
 				p.column.y += 8
 				p.timer = 0
@@ -267,12 +267,12 @@ function update_player(p, x)
 	-- move column left or right
 	if(p.timer <= 30) then
 
-		if(btnp(0) and (p.column.x-x)/8+1 > 1
+		if(btnp(0, p.player) and (p.column.x-x)/8+1 > 1
 			and p.well[(p.column.x-x)/8][p.column.y/8] == 0
 			and p.well[(p.column.x-x)/8][p.column.y/8+1] == 0
 			and p.well[(p.column.x-x)/8][p.column.y/8+2] == 0) then
 			p.column.x -= 8
-		elseif(btnp(1) and (p.column.x-x)/8+1 < 6
+		elseif(btnp(1, p.player) and (p.column.x-x)/8+1 < 6
 			and p.well[(p.column.x-x)/8+2][p.column.y/8] == 0
 			and p.well[(p.column.x-x)/8+2][p.column.y/8+1] == 0
 			and p.well[(p.column.x-x)/8+2][p.column.y/8+2] == 0) then
@@ -280,7 +280,7 @@ function update_player(p, x)
 		end
 
 		-- rotate column
-		if btnp(4) then
+		if btnp(4, p.player) then
 			p.column.sprites[4] = p.column.sprites[3]
 			p.column.sprites[3] = p.column.sprites[2]
 			p.column.sprites[2] = p.column.sprites[1]
@@ -293,41 +293,65 @@ end
 
 function _init()
 	globals = {}
-	globals.p1 = {}
-	globals.p2 = {}
-
-	globals.p1 = init_player(globals.p1, 32)
-	globals.p2 = init_player(globals.p2, 112)
+	globals.state = "Title"
 end
 
 function _update()
 	--for k,v in pairs(globals) do
 
-	globals.p1 = update_player(globals.p1, 0)
-	globals.p2 = update_player(globals.p2,112-32)
+	if(globals.state == "Title") then
+		if(btnp(4)) then 
+			globals.state = "2 Player Game"
+			globals.p1 = {}
+			globals.p2 = {}
+
+			globals.p1 = init_player(globals.p1, 32, 0)
+			globals.p2 = init_player(globals.p2, 112, 1)
+		end
+
+	elseif(globals.state == "1 Player Game") then
+		globals.p1 = update_player(globals.p1, 0)
+
+	elseif(globals.state == "2 Player Game") then
+		globals.p1 = update_player(globals.p1, 0)
+		globals.p2 = update_player(globals.p2,112-32)
+	end
 end
 
 function _draw()
 	cls()
 
-	-- draw blocks in the well
-	for i=1,6 do
-		for j=1,15 do
-			spr(globals.p1.well[i][j], 8*(i-1), 8+8*(j-1))
-			spr(globals.p2.well[i][j], 8+72+8*(i-1), 8+8*(j-1))
+
+	if(globals.state == "Title") then
+		local margin = 4
+		print("gem hunter", 48, margin)
+		print("press z to start", 36, 104)
+		print("v0.4.3", 105-margin, 123-margin)
+
+	elseif(globals.state == "1 Player Game") then
+
+
+	elseif(globals.state == "2 Player Game") then
+
+		-- draw blocks in the well
+		for i=1,6 do
+			for j=1,15 do
+				spr(globals.p1.well[i][j], 8*(i-1), 8+8*(j-1))
+				spr(globals.p2.well[i][j], 8+72+8*(i-1), 8+8*(j-1))
+			end
 		end
-	end
 
-	if not(globals.p1.clear_process) then
-		spr(globals.p1.column.sprites[1], globals.p1.column.x, globals.p1.column.y)
-		spr(globals.p1.column.sprites[2], globals.p1.column.x, globals.p1.column.y+8)
-		spr(globals.p1.column.sprites[3], globals.p1.column.x, globals.p1.column.y+16)
-	end
+		if not(globals.p1.clear_process) then
+			spr(globals.p1.column.sprites[1], globals.p1.column.x, globals.p1.column.y)
+			spr(globals.p1.column.sprites[2], globals.p1.column.x, globals.p1.column.y+8)
+			spr(globals.p1.column.sprites[3], globals.p1.column.x, globals.p1.column.y+16)
+		end
 
-	if not(globals.p2.clear_process) then
-		spr(globals.p2.column.sprites[1], globals.p2.column.x, globals.p2.column.y)
-		spr(globals.p2.column.sprites[2], globals.p2.column.x, globals.p2.column.y+8)
-		spr(globals.p2.column.sprites[3], globals.p2.column.x, globals.p2.column.y+16)
+		if not(globals.p2.clear_process) then
+			spr(globals.p2.column.sprites[1], globals.p2.column.x, globals.p2.column.y)
+			spr(globals.p2.column.sprites[2], globals.p2.column.x, globals.p2.column.y+8)
+			spr(globals.p2.column.sprites[3], globals.p2.column.x, globals.p2.column.y+16)
+		end
 	end
 
 end
