@@ -1,5 +1,5 @@
 Gem Hunter
-Version 0.4.1
+Version 0.4.2
 
 Copyright © 2019 Elias Mote
 Copyright © 2019 Roc Studios
@@ -22,7 +22,12 @@ strictly prohibited, and a violation of copyright.
 II. Version History
 
 ------------------------
-V0.4.1 - Current Version
+V0.4.2 - Current Version
+------------------------
+-- Two player mode works (on one controller)
+
+------------------------
+V0.4.1
 ------------------------
 - Added animation to blocks being eliminated
 - Combos of any number are now supported
@@ -60,6 +65,11 @@ III. Requirements
 
 IV. Story
 This is a demake of Columns 3: Revenge of Columns, so there's no story to it :)
+The basic gist of the game is to match rows of 3 or more blocks using columns of
+three blocks that can be rotated. You must force your opponent to fill their well
+with blocks before your well is filled. Combos grant you points that you can use
+to disrupt your opponent and reduce their well size while increasing yours at the
+same time.
 
 IV. Controls
 Player 1:
