@@ -51,7 +51,7 @@ function check_rows(p)
 			local blk_clr = p.well[i][j]
 			
 			-- check for a vertical row
-			if(blk_clr ~= 0) then
+			if(blk_clr ~= 0 and blk_clr ~= 17) then
 				if(p.well[i][j+1] == blk_clr and p.well[i][j+2] == blk_clr) then
 					add(d_b, {i=i,j=j})
 					init_block_added = true
@@ -70,7 +70,7 @@ function check_rows(p)
 			local blk_clr = p.well[i][j]
 
 			-- check for a horizontal row
-			if(blk_clr ~= 0) then
+			if(blk_clr ~= 0 and blk_clr ~= 17) then
 				if(p.well[i+1][j] == blk_clr and p.well[i+2][j] == blk_clr) then
 					if not(init_block_added) then
 						add(d_b, {i=i,j=j})
@@ -91,7 +91,7 @@ function check_rows(p)
 			local blk_clr = p.well[i][j]
 
 			-- check for a diagonal row
-			if(blk_clr ~= 0) then
+			if(blk_clr ~= 0 and blk_clr ~= 17) then
 				if(p.well[i+1][j+1] == blk_clr and p.well[i+2][j+2] == blk_clr) then
 					if not(init_block_added) then
 						add(d_b, {i=i,j=j})
@@ -112,7 +112,7 @@ function check_rows(p)
 			local blk_clr = p.well[i][j]
 
 			-- check for a diagonal row
-			if(blk_clr ~= 0) then
+			if(blk_clr ~= 0 and blk_clr ~= 17) then
 				if(p.well[i+1][j-1] == blk_clr and p.well[i+2][j-2] == blk_clr) then
 					if not(init_block_added) then
 						add(d_b, {i=i,j=j})
@@ -148,6 +148,30 @@ function clear_rows(p)
 	end
 end
 
+function add_crush_levels(p,crush_levels)
+	-- first, copy blocks up by the number of crush levels
+	for i=1,6 do
+		for j=1+crush_levels,14 do
+			p.well[i][j] = p.well[i][j+crush_levels]
+		end
+	end
+
+	-- next, setup gray crush bars for each crush level
+	for i=1,6 do
+		for j=15-p.crush_bar_level, 15-p.crush_bar_level-crush_levels+1, -1 do
+			p.well[i][j] = 17
+		end
+	end
+
+	-- update the number of crush bar levels for the player
+	p.crush_bar_level += crush_levels
+
+	-- create a new column for the player
+	p = create_new_column(p)
+
+	return p
+end
+
 -- initialize the player
 function init_player(p, x, player)
 
@@ -155,14 +179,15 @@ function init_player(p, x, player)
 	p.player = player or 0
 	p.timer = 0
 	p.clear_process = false
+	p.crush_process = false
 	p.del_blks = {}
+	p.crush_bar_level = 0
 
 	-- create the column
 	p.column = {}
 	p.column.x = x or 32 
 	p.column.y = 8
 	p.column.sprites = {}
-
 	add(p.column.sprites, flr(rnd(4)) + 1)
 	add(p.column.sprites, flr(rnd(4)) + 1)
 	add(p.column.sprites, flr(rnd(4)) + 1)
@@ -173,6 +198,9 @@ function init_player(p, x, player)
 	add(p.column_next, flr(rnd(4)) + 1)
 	add(p.column_next, flr(rnd(4)) + 1)
 	add(p.column_next, flr(rnd(4)) + 1)
+
+	-- current score
+	p.score = 0
 
 	-- 6 x 15
 	p.well = {
@@ -187,6 +215,7 @@ function init_player(p, x, player)
 	return p
 end
 
+-- create a new column and init values
 function create_new_column(p)
 	p.column.sprites[1] = p.column_next[1]
 	p.column.sprites[2] = p.column_next[2]
@@ -227,14 +256,7 @@ function update_player(p, x)
 					p.clear_process = true
 					p.timer = 30
 				else
-					-- create new column
-					--[[p.column.sprites[1] = flr(rnd(4)) + 1
-					p.column.sprites[2] = flr(rnd(4)) + 1
-					p.column.sprites[3] = flr(rnd(4)) + 1
-
-					p.clear_process = false
-					p.column.y = 8
-					p.timer = 0]]
+					-- create a new column
 					p = create_new_column(p)
 				end
 			end
@@ -270,6 +292,13 @@ function update_player(p, x)
 		if(p.timer == 50) then
 			p = blk_removal(p)
 			p = drop_blocks(p)
+			for i in all(p.del_blks) do
+				if(p.score < 30) then
+					p.score += 1
+				else
+					p.score = 30
+				end
+			end
 
 			-- check if new blocks can be removed
 			p.del_blks = check_rows(p)
@@ -280,14 +309,7 @@ function update_player(p, x)
 			-- otherwise, continue as normal
 			else
 
-				-- create new column
-				--[[p.column.sprites[1] = flr(rnd(4)) + 1
-				p.column.sprites[2] = flr(rnd(4)) + 1
-				p.column.sprites[3] = flr(rnd(4)) + 1
-
-				p.clear_process = false
-				p.column.y = 8
-				p.timer = 0]]
+				-- create a new column
 				p = create_new_column(p)
 			end
 		end
@@ -315,6 +337,27 @@ function update_player(p, x)
 			p.column.sprites[2] = p.column.sprites[1]
 			p.column.sprites[1] = p.column.sprites[4]
 		end
+	end
+
+	-- activate crush
+	if(btnp(5, p.player) and p.score >= 10) then
+		--p.crush_process = true
+
+
+		-- first, calculate the number of crush levels
+		local crush_levels = flr(p.score / 10)
+
+		-- subtract 10 x number of crush levels from the players score
+		p.score -= 10 * crush_levels
+
+		-- add crush levels to the other player
+		if(p.player == 0) then
+			globals.p2 = add_crush_levels(globals.p2, crush_levels)
+		else
+			globals.p1 = add_crush_levels(globals.p1, crush_levels)
+		end
+
+		--p.crush_process = false
 	end
 
 	return p
@@ -355,7 +398,7 @@ function _draw()
 		local margin = 4
 		print("gem hunter", 48, margin)
 		print("press z to start", 36, 104)
-		print("v0.4.4", 105-margin, 123-margin)
+		print("v0.4.5", 105-margin, 123-margin)
 
 	elseif(globals.state == "1 Player Game") then
 
@@ -383,6 +426,7 @@ function _draw()
 		end
 
 		-- draw the next columns for the players
+		print("next", 56, 8)
 		spr(globals.p1.column_next[1], 48, 16)
 		spr(globals.p1.column_next[2], 48, 24)
 		spr(globals.p1.column_next[3], 48, 32)
@@ -390,6 +434,11 @@ function _draw()
 		spr(globals.p2.column_next[1], 72, 16)
 		spr(globals.p2.column_next[2], 72, 24)
 		spr(globals.p2.column_next[3], 72, 32)
+
+		-- draw the current scores
+		print("score", 56, 48)
+		print(globals.p1.score, 48, 56)
+		print(globals.p2.score, 72, 56)
 	end
 
 end
@@ -402,3 +451,11 @@ __gfx__
 7000000788888888aaaaaaaabbbbbbbb111111110000000000070000000008001000000a00000000000000000000000000000000000000000000000000000000
 70000007788888877aaaaaa77bbbbbb77111111770000007700000077b000007710000a700000000000000000000000000000000000000000000000000000000
 777777777788887777aaaa7777bbbb777711117777000077770000777701007777100a7700000000000000000000000000000000000000000000000000000000
+00000000775555770000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000755555570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000555555550000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000550550550000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000550550550000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000555555550000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000755555570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000775555770000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

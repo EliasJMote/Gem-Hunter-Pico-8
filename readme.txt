@@ -1,5 +1,5 @@
 Gem Hunter
-Version 0.4.4
+Version 0.4.5
 
 Copyright © 2019 Elias Mote
 Copyright © 2019 Roc Studios
@@ -22,7 +22,13 @@ strictly prohibited, and a violation of copyright.
 II. Version History
 
 ------------------------
-V0.4.4 - Current Version
+V0.4.5 - Current Version
+------------------------
+-- Added score display (max of 30)
+-- Added crush bars (only additive, not subtractive)
+
+------------------------
+V0.4.4
 ------------------------
 -- Added game display showing future columns
 
@@ -87,6 +93,7 @@ Player 1:
 - Use the left and right keys to move the falling columns
 - Use the down key to drop the column faster
 - Use the 'Z' key to rotate the column
+- Use the 'X' key to "crush" your opponent (uses 10 or more score)
 
 V. Contact
 Contact me with questions or comments at rulerofchaosstudios@gmail.com
