@@ -13,8 +13,9 @@ function blk_removal(p)
 	return p
 end
 
+-- drop floating blocks
 function drop_blocks(p)
-	-- drop blocks
+
 	for i=6,1,-1 do
 		for j=14,1,-1 do
 
@@ -36,6 +37,7 @@ function drop_blocks(p)
 	return p
 end
 
+-- check rows for matching pieces
 function check_rows(p)
 
 	local d_b = {}
@@ -146,6 +148,7 @@ function clear_rows(p)
 	end
 end
 
+-- initialize the player
 function init_player(p, x, player)
 
 	-- setup player values
@@ -164,6 +167,13 @@ function init_player(p, x, player)
 	add(p.column.sprites, flr(rnd(4)) + 1)
 	add(p.column.sprites, flr(rnd(4)) + 1)
 
+	-- create the next column that will be used
+	-- (display this to the player)
+	p.column_next = {}
+	add(p.column_next, flr(rnd(4)) + 1)
+	add(p.column_next, flr(rnd(4)) + 1)
+	add(p.column_next, flr(rnd(4)) + 1)
+
 	-- 6 x 15
 	p.well = {
 				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,},
@@ -177,6 +187,23 @@ function init_player(p, x, player)
 	return p
 end
 
+function create_new_column(p)
+	p.column.sprites[1] = p.column_next[1]
+	p.column.sprites[2] = p.column_next[2]
+	p.column.sprites[3] = p.column_next[3]
+
+	p.column_next[1] = flr(rnd(4)) + 1
+	p.column_next[2] = flr(rnd(4)) + 1
+	p.column_next[3] = flr(rnd(4)) + 1
+
+	p.clear_process = false
+	p.column.y = 8
+	p.timer = 0
+
+	return p
+end
+
+-- update the player
 function update_player(p, x)
 	p.timer += 1
 	--printh(timer)
@@ -201,13 +228,14 @@ function update_player(p, x)
 					p.timer = 30
 				else
 					-- create new column
-					p.column.sprites[1] = flr(rnd(4)) + 1
+					--[[p.column.sprites[1] = flr(rnd(4)) + 1
 					p.column.sprites[2] = flr(rnd(4)) + 1
 					p.column.sprites[3] = flr(rnd(4)) + 1
 
 					p.clear_process = false
 					p.column.y = 8
-					p.timer = 0
+					p.timer = 0]]
+					p = create_new_column(p)
 				end
 			end
 		end
@@ -253,13 +281,14 @@ function update_player(p, x)
 			else
 
 				-- create new column
-				p.column.sprites[1] = flr(rnd(4)) + 1
+				--[[p.column.sprites[1] = flr(rnd(4)) + 1
 				p.column.sprites[2] = flr(rnd(4)) + 1
 				p.column.sprites[3] = flr(rnd(4)) + 1
 
 				p.clear_process = false
 				p.column.y = 8
-				p.timer = 0
+				p.timer = 0]]
+				p = create_new_column(p)
 			end
 		end
 	end
@@ -326,7 +355,7 @@ function _draw()
 		local margin = 4
 		print("gem hunter", 48, margin)
 		print("press z to start", 36, 104)
-		print("v0.4.3", 105-margin, 123-margin)
+		print("v0.4.4", 105-margin, 123-margin)
 
 	elseif(globals.state == "1 Player Game") then
 
@@ -352,6 +381,15 @@ function _draw()
 			spr(globals.p2.column.sprites[2], globals.p2.column.x, globals.p2.column.y+8)
 			spr(globals.p2.column.sprites[3], globals.p2.column.x, globals.p2.column.y+16)
 		end
+
+		-- draw the next columns for the players
+		spr(globals.p1.column_next[1], 48, 16)
+		spr(globals.p1.column_next[2], 48, 24)
+		spr(globals.p1.column_next[3], 48, 32)
+
+		spr(globals.p2.column_next[1], 72, 16)
+		spr(globals.p2.column_next[2], 72, 24)
+		spr(globals.p2.column_next[3], 72, 32)
 	end
 
 end
