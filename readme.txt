@@ -1,5 +1,5 @@
 Gem Hunter
-Version 0.4.5
+Version 0.4.6
 
 Copyright © 2019 Elias Mote
 Copyright © 2019 Roc Studios
@@ -22,7 +22,12 @@ strictly prohibited, and a violation of copyright.
 II. Version History
 
 ------------------------
-V0.4.5 - Current Version
+V0.4.6 - Current Version
+------------------------
+-- Added win/loss conditions
+
+------------------------
+V0.4.5
 ------------------------
 -- Added score display (max of 30)
 -- Added crush bars (only additive, not subtractive)

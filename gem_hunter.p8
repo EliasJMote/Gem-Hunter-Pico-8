@@ -148,17 +148,17 @@ function clear_rows(p)
 	end
 end
 
-function add_crush_levels(p,crush_levels)
+function add_crush_levels(p,crush_levels,x)
 	-- first, copy blocks up by the number of crush levels
 	for i=1,6 do
-		for j=1+crush_levels,14 do
+		for j=0+crush_levels,14 do
 			p.well[i][j] = p.well[i][j+crush_levels]
 		end
 	end
 
 	-- next, setup gray crush bars for each crush level
 	for i=1,6 do
-		for j=15-p.crush_bar_level, 15-p.crush_bar_level-crush_levels+1, -1 do
+		for j=16-p.crush_bar_level, 15-p.crush_bar_level-crush_levels+1, -1 do
 			p.well[i][j] = 17
 		end
 	end
@@ -167,9 +167,27 @@ function add_crush_levels(p,crush_levels)
 	p.crush_bar_level += crush_levels
 
 	-- create a new column for the player
-	p = create_new_column(p)
+	p = create_new_column(p,x)
 
 	return p
+end
+
+-- function remove_crush_levels
+
+-- check if a block coming down has overlap with the lowest block
+function check_overlap(p, x)
+
+	--printh((p.column.x-x)/8+1)
+
+	if(p.well[(p.column.x-x)/8+1][p.column.y/8] ~= 0) then
+		
+		-- if player 1 has lost, player 2 has won
+		if(p.player == 0) then
+			globals.game_state = "p2 victory"
+		else
+			globals.game_state = "p1 victory"
+		end
+	end
 end
 
 -- initialize the player
@@ -216,7 +234,7 @@ function init_player(p, x, player)
 end
 
 -- create a new column and init values
-function create_new_column(p)
+function create_new_column(p,x)
 	p.column.sprites[1] = p.column_next[1]
 	p.column.sprites[2] = p.column_next[2]
 	p.column.sprites[3] = p.column_next[3]
@@ -228,6 +246,8 @@ function create_new_column(p)
 	p.clear_process = false
 	p.column.y = 8
 	p.timer = 0
+
+	check_overlap(p, x)
 
 	return p
 end
@@ -257,7 +277,7 @@ function update_player(p, x)
 					p.timer = 30
 				else
 					-- create a new column
-					p = create_new_column(p)
+					p = create_new_column(p,x)
 				end
 			end
 		end
@@ -310,7 +330,7 @@ function update_player(p, x)
 			else
 
 				-- create a new column
-				p = create_new_column(p)
+				p = create_new_column(p,x)
 			end
 		end
 	end
@@ -352,9 +372,9 @@ function update_player(p, x)
 
 		-- add crush levels to the other player
 		if(p.player == 0) then
-			globals.p2 = add_crush_levels(globals.p2, crush_levels)
+			globals.p2 = add_crush_levels(globals.p2, crush_levels, 112-32)
 		else
-			globals.p1 = add_crush_levels(globals.p1, crush_levels)
+			globals.p1 = add_crush_levels(globals.p1, crush_levels, 0)
 		end
 
 		--p.crush_process = false
@@ -366,6 +386,8 @@ end
 function _init()
 	globals = {}
 	globals.state = "Title"
+	globals.game_state = "gameplay"
+	globals.timer = 0
 end
 
 function _update()
@@ -385,8 +407,11 @@ function _update()
 		globals.p1 = update_player(globals.p1, 0)
 
 	elseif(globals.state == "2 Player Game") then
-		globals.p1 = update_player(globals.p1, 0)
-		globals.p2 = update_player(globals.p2,112-32)
+		globals.timer = (globals.timer + 1) % 32000
+		if(globals.game_state == "gameplay") then
+			globals.p1 = update_player(globals.p1, 0)
+			globals.p2 = update_player(globals.p2,112-32)
+		end
 	end
 end
 
@@ -398,7 +423,7 @@ function _draw()
 		local margin = 4
 		print("gem hunter", 48, margin)
 		print("press z to start", 36, 104)
-		print("v0.4.5", 105-margin, 123-margin)
+		print("v0.4.6", 105-margin, 123-margin)
 
 	elseif(globals.state == "1 Player Game") then
 
@@ -439,8 +464,14 @@ function _draw()
 		print("score", 56, 48)
 		print(globals.p1.score, 48, 56)
 		print(globals.p2.score, 72, 56)
-	end
 
+		-- display victory
+		if(globals.game_state == "p1 victory") then
+			print("p1 wins", 50, 80)
+		elseif(globals.game_state == "p2 victory") then
+			print("p2 wins", 50, 80)
+		end
+	end
 end
 __gfx__
 777777777788887777aaaa7777bbbb777711117777000077770000777700107777800b7700000000000000000000000000000000000000000000000000000000
