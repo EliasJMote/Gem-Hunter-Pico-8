@@ -1,5 +1,5 @@
 Gem Hunter
-Version 0.4.6
+Version 0.5.0
 
 Copyright © 2019 Elias Mote
 Copyright © 2019 Roc Studios
@@ -22,7 +22,14 @@ strictly prohibited, and a violation of copyright.
 II. Version History
 
 ------------------------
-V0.4.6 - Current Version
+V0.5.0 - Current Version
+------------------------
+-- Added a "game mode" screen
+-- Added the ability to start a new game after a player has won
+-- Added sfx for placing columns/dropping blocks and clearing rows
+
+------------------------
+V0.4.6
 ------------------------
 -- Added win/loss conditions
 
@@ -95,10 +102,16 @@ same time.
 
 IV. Controls
 Player 1:
-- Use the left and right keys to move the falling columns
+- Use the left and right keys to move the falling columns left and right, respectively
 - Use the down key to drop the column faster
 - Use the 'Z' key to rotate the column
 - Use the 'X' key to "crush" your opponent (uses 10 or more score)
+
+Player 2:
+- Use the 'S' and 'F' keys to move the falling columns left and right, respectively
+- Use the 'D' key to drop the column faster
+- Use the 'Left Shift' key to rotate the column
+- Use the 'A' key to "crush" your opponent (uses 10 or more score)
 
 V. Contact
 Contact me with questions or comments at rulerofchaosstudios@gmail.com
