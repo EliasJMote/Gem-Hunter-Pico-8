@@ -1,5 +1,5 @@
 Gem Hunter
-Version 0.5.1
+Version 0.5.2
 
 Copyright © 2019 Elias Mote
 Copyright © 2019 Roc Studios
@@ -22,7 +22,12 @@ strictly prohibited, and a violation of copyright.
 II. Version History
 
 ------------------------
-V0.5.1 - Current Version
+V0.5.2 - Current Version
+------------------------
+-- Changed sprites from "gummy" blocks to gemstone blocks
+
+------------------------
+V0.5.1
 ------------------------
 -- Added a "practice" mode
 
