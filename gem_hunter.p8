@@ -365,24 +365,26 @@ function update_player(p, x)
 	end
 
 	-- activate crush
-	if(btnp(5, p.player) and p.score >= 10) then
-		--p.crush_process = true
+	if(globals.state ~= "Practice") then
+		if(btnp(5, p.player) and p.score >= 10) then
+			--p.crush_process = true
 
 
-		-- first, calculate the number of crush levels
-		local crush_levels = flr(p.score / 10)
+			-- first, calculate the number of crush levels
+			local crush_levels = flr(p.score / 10)
 
-		-- subtract 10 x number of crush levels from the players score
-		p.score -= 10 * crush_levels
+			-- subtract 10 x number of crush levels from the players score
+			p.score -= 10 * crush_levels
 
-		-- add crush levels to the other player
-		if(p.player == 0) then
-			globals.p2 = add_crush_levels(globals.p2, crush_levels, 112-32)
-		else
-			globals.p1 = add_crush_levels(globals.p1, crush_levels, 0)
+			-- add crush levels to the other player
+			if(p.player == 0) then
+				globals.p2 = add_crush_levels(globals.p2, crush_levels, 112-32)
+			else
+				globals.p1 = add_crush_levels(globals.p1, crush_levels, 0)
+			end
+
+			--p.crush_process = false
 		end
-
-		--p.crush_process = false
 	end
 
 	return p
@@ -390,11 +392,18 @@ end
 
 -- init game
 function init_game()
-	globals.p1 = {}
-	globals.p2 = {}
+	if(globals.state == "2 Player Game") then
+		globals.p1 = {}
+		globals.p2 = {}
 
-	globals.p1 = init_player(globals.p1, 32, 0)
-	globals.p2 = init_player(globals.p2, 112, 1)
+		globals.p1 = init_player(globals.p1, 32, 0)
+		globals.p2 = init_player(globals.p2, 112, 1)
+
+	elseif(globals.state == "Practice") then
+		globals.p1 = {}
+
+		globals.p1 = init_player(globals.p1, 32, 0)
+	end
 
 	globals.game_state = "gameplay"
 end
@@ -412,13 +421,16 @@ function _update()
 	if(globals.state == "Title") then
 		if(btnp(4)) then 
 			globals.state = "Select Mode"
-			globals.title_state = "2 Player"
+			globals.title_state = "Practice"
 		end
 
 	elseif(globals.state == "Select Mode") then
 		if(btnp(4)) then
 			if(globals.title_state == "2 Player") then
 				globals.state = "2 Player Game"
+				init_game()
+			elseif(globals.title_state == "Practice") then
+				globals.state = "Practice"
 				init_game()
 			end
 		end
@@ -429,8 +441,10 @@ function _update()
 				globals.title_state = "Options"
 			elseif(globals.title_state == "2 Player") then
 				globals.title_state = "1 Player"
-			elseif(globals.title_state == "Options") then
+			elseif(globals.title_state == "Practice") then
 				globals.title_state = "2 Player"
+			elseif(globals.title_state == "Options") then
+				globals.title_state = "Practice"
 			end
 
 		-- if the player pushes down
@@ -438,6 +452,8 @@ function _update()
 			if(globals.title_state == "1 Player") then
 				globals.title_state = "2 Player"
 			elseif(globals.title_state == "2 Player") then
+				globals.title_state = "Practice"
+			elseif(globals.title_state == "Practice") then
 				globals.title_state = "Options"
 			elseif(globals.title_state == "Options") then
 				globals.title_state = "1 Player"
@@ -458,6 +474,15 @@ function _update()
 				init_game()
 			end
 		end
+	elseif(globals.state == "Practice") then
+
+		if(globals.game_state == "gameplay") then
+			globals.p1 = update_player(globals.p1, 0)
+		else
+			if(btnp(4)) then
+				init_game()
+			end
+		end
 	end
 end
 
@@ -469,7 +494,7 @@ function _draw()
 		local margin = 4
 		print("gem hunter", 48, margin)
 		print("press z to start", 36, 104)
-		print("v0.5.0", 105-margin, 123-margin)
+		print("v0.5.1", 105-margin, 123-margin)
 
 	elseif(globals.state == "Select Mode") then
 		local margin = 4
@@ -487,10 +512,16 @@ function _draw()
 		print("2 player", 36, 64)
 		color(7)
 
+		if(globals.title_state == "Practice") then
+			color(8)
+		end
+		print("practice", 36, 80)
+		color(7)
+
 		if(globals.title_state == "Options") then
 			color(8)
 		end
-		print("options (unfinished)", 36, 80)
+		print("options (unfinished)", 36, 96)
 		color(7)
 
 	elseif(globals.state == "1 Player Game") then
@@ -539,17 +570,45 @@ function _draw()
 		elseif(globals.game_state == "p2 victory") then
 			print("p2 wins", 50, 80)
 		end
+
+	elseif(globals.state == "Practice") then
+
+		-- draw blocks in the well
+		for i=1,6 do
+			for j=1,15 do
+				spr(globals.p1.well[i][j], 8*(i-1), 8+8*(j-1))
+			end
+		end
+
+		if not(globals.p1.clear_process) then
+			spr(globals.p1.column.sprites[1], globals.p1.column.x, globals.p1.column.y)
+			spr(globals.p1.column.sprites[2], globals.p1.column.x, globals.p1.column.y+8)
+			spr(globals.p1.column.sprites[3], globals.p1.column.x, globals.p1.column.y+16)
+		end
+
+		-- draw the next columns for the players
+		print("next", 56, 8)
+		spr(globals.p1.column_next[1], 48, 16)
+		spr(globals.p1.column_next[2], 48, 24)
+		spr(globals.p1.column_next[3], 48, 32)
+
+		-- display victory
+		if(globals.game_state == "p2 victory") then
+			print("game over", 50, 64)
+			print("press 'z'", 50, 88)
+			print("to restart", 50, 96)
+		end
 	end
 end
 __gfx__
-777777777788887777aaaa7777bbbb777711117777000077770000777700107777800b7700000000000000000000000000000000000000000000000000000000
-70000007788888877aaaaaa77bbbbbb771111117700000077000000770a00007780000b700000000000000000000000000000000000000000000000000000000
-7000000788888888aaaaaaaabbbbbbbb11111111000000000000100000000b008000000b00000000000000000000000000000000000000000000000000000000
-7000000788088088aa0aa0aabb0bb0bb11011011000a10000a000000800000000000000000000000000000000000000000000000000000000000000000000000
-7000000788088088aa0aa0aabb0bb0bb11011011000b8000000000800000000a0000000000000000000000000000000000000000000000000000000000000000
-7000000788888888aaaaaaaabbbbbbbb111111110000000000070000000008001000000a00000000000000000000000000000000000000000000000000000000
-70000007788888877aaaaaa77bbbbbb77111111770000007700000077b000007710000a700000000000000000000000000000000000000000000000000000000
-777777777788887777aaaa7777bbbb777711117777000077770000777701007777100a7700000000000000000000000000000000000000000000000000000000
+777777777788887777aaaa7777bbbb777711117777000077770000777700107777800b7700000000770880770000000000000000000000000000000000000000
+70000007788888877aaaaaa77bbbbbb771111117700000077000000770a00007780000b700000000708778070000000000000000000000000000000000000000
+7000000788888888aaaaaaaabbbbbbbb11111111000000000000100000000b008000000b00000000008778000000000000000000000000000000000000000000
+7000000788088088aa0aa0aabb0bb0bb11011011000a10000a000000800000000000000000000000087887800000000000000000000000000000000000000000
+7000000788088088aa0aa0aabb0bb0bb11011011000b8000000000800000000a0000000000000000088778800000000000000000000000000000000000000000
+7000000788888888aaaaaaaabbbbbbbb111111110000000000070000000008001000000a00000000087777800000000000000000000000000000000000000000
+70000007788888877aaaaaa77bbbbbb77111111770000007700000077b000007710000a700000000788888870000000000000000000000000000000000000000
+777777777788887777aaaa7777bbbb777711117777000077770000777701007777100a7700000000770000770000000000000000000000000000000000000000
 00000000775555770000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000755555570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000555555550000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -558,6 +617,14 @@ __gfx__
 00000000555555550000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000755555570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000775555770000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000078888887770a90777733337777cccc770000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000008888ff8870aa7a077377b3377c77ccc70000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000088888f880aa99aa03b7bb3b30771ccc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000888888889997a999303bb3b3071ccc100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000008e888888aa9aa99a303bbb330ccccc100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000008ee888880aa99990303bb30301ccc1100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000088ee888870aa990773b300377ccc11170000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000078888887770990777733337777c111770000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __label__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

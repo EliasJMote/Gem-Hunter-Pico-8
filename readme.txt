@@ -1,5 +1,5 @@
 Gem Hunter
-Version 0.5.0
+Version 0.5.1
 
 Copyright © 2019 Elias Mote
 Copyright © 2019 Roc Studios
@@ -22,7 +22,12 @@ strictly prohibited, and a violation of copyright.
 II. Version History
 
 ------------------------
-V0.5.0 - Current Version
+V0.5.1 - Current Version
+------------------------
+-- Added a "practice" mode
+
+------------------------
+V0.5.0
 ------------------------
 -- Added a "game mode" screen
 -- Added the ability to start a new game after a player has won
@@ -106,6 +111,8 @@ Player 1:
 - Use the down key to drop the column faster
 - Use the 'Z' key to rotate the column
 - Use the 'X' key to "crush" your opponent (uses 10 or more score)
+- Use the up and down keys to navigate menus
+- Press 'Z' after a player has won to restart the game
 
 Player 2:
 - Use the 'S' and 'F' keys to move the falling columns left and right, respectively
