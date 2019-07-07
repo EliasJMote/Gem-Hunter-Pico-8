@@ -22,7 +22,12 @@ strictly prohibited, and a violation of copyright.
 II. Version History
 
 ------------------------
-V0.5.2 - Current Version
+V0.6.0 - Current Version
+------------------------
+-- Changed block removal algorithm (should work correctly, could use further testing)
+
+------------------------
+V0.5.2
 ------------------------
 -- Changed sprites from "gummy" blocks to gemstone blocks
 

@@ -2,12 +2,19 @@ pico-8 cartridge // http://www.pico-8.com
 version 17
 __lua__
 
+function check_del_blks(x,y,d_b)
+	for b in all(d_b) do
+		if(b[x]==x and b[y]==y) then return true end
+	end
+	return false
+end
+
 -- remove blocks
 function blk_removal(p)
 
 	-- remove blocks as necessary
-	for x in all(p.del_blks) do
-		p.well[x["i"]][x["j"]] = 0
+	for b in all(p.del_blks) do
+		p.well[b["x"]][b["y"]] = 0
 	end
 
 	return p
@@ -40,86 +47,166 @@ end
 -- check rows for matching pieces
 function check_rows(p)
 
+	-- a table of blocks to be deleted after all checking is complete
 	local d_b = {}
-	local init_block_added = false
 
 	-- check the well vertically
-	for i=1,6 do
-		for j=1,13 do
+	
+	for x=1,6 do
+		for y=1,13 do
 
 			-- the current block we are looking at
-			local blk_clr = p.well[i][j]
+			local blk_clr = p.well[x][y]
+
+			--if not check_del_blks(x,y,d_b) then
 			
-			-- check for a vertical row
-			if(blk_clr ~= 0 and blk_clr ~= 17) then
-				if(p.well[i][j+1] == blk_clr and p.well[i][j+2] == blk_clr) then
-					add(d_b, {i=i,j=j})
-					init_block_added = true
-					add(d_b, {i=i,j=j+1})
-					add(d_b, {i=i,j=j+2})
+				-- check for a vertical row
+				if(blk_clr ~= 0 and blk_clr ~= 17) then
+
+					-- if the two blocks above are the same
+					if(p.well[x][y+1] == blk_clr and p.well[x][y+2] == blk_clr) then
+
+						-- add 3 blocks in a column
+						add(d_b, {x=x,y=y})
+						add(d_b, {x=x,y=y+1})
+						add(d_b, {x=x,y=y+2})
+
+						-- keep checking blocks above until a different block is found
+						for y_2=y+3,15 do
+							if(p.well[x][y_2] == blk_clr) then
+								add(d_b, {x=x,y=y_2})
+							else
+								break
+							end
+						end
+					end
+
+					
 				end
-			end
+			--end
 		end
 	end
 
 	-- check the well horizontally
-	for i=1,4 do
-		for j=1,15 do
+	
+	for y=1,15 do
+		for x=1,4 do
 
 			-- the current block we are looking at
-			local blk_clr = p.well[i][j]
+			local blk_clr = p.well[x][y]
 
 			-- check for a horizontal row
 			if(blk_clr ~= 0 and blk_clr ~= 17) then
-				if(p.well[i+1][j] == blk_clr and p.well[i+2][j] == blk_clr) then
-					if not(init_block_added) then
-						add(d_b, {i=i,j=j})
-						init_block_added = true
+
+				-- if 2 blocks to the right are the same, mark the row for deletion
+				if(p.well[x+1][y] == blk_clr and p.well[x+2][y] == blk_clr) then
+					
+					add(d_b, {x=x,y=y})
+					add(d_b, {x=x+1,y=y})
+					add(d_b, {x=x+2,y=y})
+
+					-- keep checking blocks to the right until they are different
+					for x_2=x+3,6 do
+						if(p.well[x_2][y] == blk_clr) then
+							add(d_b, {x=x_2,y=y})
+						else
+							break
+						end
 					end
-					add(d_b, {i=i+1,j=j})
-					add(d_b, {i=i+2,j=j})
+					x=5
 				end
 			end
 		end
 	end
 
 	-- check the well for upper left to lower right diagonal
-	for i=1,4 do
-		for j=1,13 do
+	
+	for y=1,13 do
+		for x=1,4 do
 
 			-- the current block we are looking at
-			local blk_clr = p.well[i][j]
+			local blk_clr = p.well[x][y]
 
 			-- check for a diagonal row
 			if(blk_clr ~= 0 and blk_clr ~= 17) then
-				if(p.well[i+1][j+1] == blk_clr and p.well[i+2][j+2] == blk_clr) then
-					if not(init_block_added) then
-						add(d_b, {i=i,j=j})
-						init_block_added = true
+				if(p.well[x+1][y+1] == blk_clr and p.well[x+2][y+2] == blk_clr) then
+
+					-- if 2 blocks to the lower right are the same, mark the row for deletion
+					add(d_b, {x=x,y=y})
+					add(d_b, {x=x+1,y=y+1})
+					add(d_b, {x=x+2,y=y+2})
+
+					-- keep checking blocks to the lower right until they are different
+					if(x+3<=6) then
+						if(p.well[x+3][y+3] == blk_clr) then
+							add(d_b, {x=x+3,y=y+3})
+						else
+							break
+						end
 					end
-					add(d_b, {i=i+1,j=j+1})
-					add(d_b, {i=i+2,j=j+2})
+
+					if(x+4<=6) then
+						if(p.well[x+4][y+4] == blk_clr) then
+							add(d_b, {x=x+4,y=y+4})
+						else
+							break
+						end
+					end
+
+					if(x+5<=6) then
+						if(p.well[x+5][y+5] == blk_clr) then
+							add(d_b, {x=x+5,y=y+5})
+						else
+							break
+						end
+					end
+
 				end
 			end
 		end
 	end
 
 	-- check the well for lower left to upper right diagonal
-	for i=1,4 do
-		for j=3,15 do
+	for x=1,4 do
+		for y=3,15 do
 
 			-- the current block we are looking at
-			local blk_clr = p.well[i][j]
+			local blk_clr = p.well[x][y]
 
 			-- check for a diagonal row
 			if(blk_clr ~= 0 and blk_clr ~= 17) then
-				if(p.well[i+1][j-1] == blk_clr and p.well[i+2][j-2] == blk_clr) then
-					if not(init_block_added) then
-						add(d_b, {i=i,j=j})
-						init_block_added = true
+
+				-- if 2 blocks to the upper right are the same, mark the row for deletion
+				if(p.well[x+1][y-1] == blk_clr and p.well[x+2][y-2] == blk_clr) then
+					
+					add(d_b, {x=x,y=y})
+					add(d_b, {x=x+1,y=y-1})
+					add(d_b, {x=x+2,y=y-2})
+
+					-- keep checking blocks to the upper right until they are different
+					if(x+3<=6) then
+						if(p.well[x+3][y-3] == blk_clr) then
+							add(d_b, {x=x+3,y=y-3})
+						else
+							break
+						end
 					end
-					add(d_b, {i=i+1,j=j-1})
-					add(d_b, {i=i+2,j=j-2})
+
+					if(x+4<=6) then
+						if(p.well[x+4][y-4] == blk_clr) then
+							add(d_b, {x=x+4,y=y-4})
+						else
+							break
+						end
+					end
+
+					if(x+5<=6) then
+						if(p.well[x+5][y-5] == blk_clr) then
+							add(d_b, {x=x+5,y=y-5})
+						else
+							break
+						end
+					end
 				end
 			end
 		end
@@ -173,6 +260,26 @@ function add_crush_levels(p,crush_levels,x)
 end
 
 -- function remove_crush_levels
+function remove_crush_levels(p,crush_levels)
+	-- first, copy blocks down by the number of crush levels
+	for i=1,6 do
+		for j=crush_levels,15 do
+			p.well[i][j] = p.well[i][j-crush_levels]
+		end
+	end
+
+	-- next, clear the top number of crush levels
+	for i=1,6 do
+		for j=1,crush_levels  do
+			p.well[i][j] = 0
+		end
+	end
+
+	-- update the number of crush bar levels for the player
+	p.crush_bar_level -= crush_levels
+
+	return p
+end
 
 -- check if a block coming down has overlap with the lowest block
 function check_overlap(p, x)
@@ -213,9 +320,9 @@ function init_player(p, x, player)
 	-- create the next column that will be used
 	-- (display this to the player)
 	p.column_next = {}
-	add(p.column_next, flr(rnd(4)) + 1)
-	add(p.column_next, flr(rnd(4)) + 1)
-	add(p.column_next, flr(rnd(4)) + 1)
+	for i=1,3 do
+		add(p.column_next, flr(rnd(4)) + 1)
+	end
 
 	-- current score
 	p.score = 0
@@ -290,25 +397,25 @@ function update_player(p, x)
 
 		if(p.timer == 30) then
 			for x in all(p.del_blks) do
-				p.well[x["i"]][x["j"]] = 5
+				p.well[x["x"]][x["y"]] = 5
 			end
 		end
 
 		if(p.timer == 35) then
 			for x in all(p.del_blks) do
-				p.well[x["i"]][x["j"]] = 6
+				p.well[x["x"]][x["y"]] = 6
 			end
 		end
 
 		if(p.timer == 40) then
 			for x in all(p.del_blks) do
-				p.well[x["i"]][x["j"]] = 7
+				p.well[x["x"]][x["y"]] = 7
 			end
 		end
 
 		if(p.timer == 45) then
 			for x in all(p.del_blks) do
-				p.well[x["i"]][x["j"]] = 8
+				p.well[x["x"]][x["y"]] = 8
 			end
 		end
 
@@ -393,6 +500,8 @@ end
 -- init game
 function init_game()
 	if(globals.state == "2 Player Game") then
+		--globals.players = {}
+
 		globals.p1 = {}
 		globals.p2 = {}
 
@@ -410,9 +519,18 @@ end
 
 function _init()
 	globals = {}
+
+	-- setup initial state
 	globals.state = "Title"
+
+	-- setup initial gameplay state
 	globals.game_state = "gameplay"
+
 	globals.timer = 0
+
+	-- setup some constants
+	globals.well_len = 6
+	globals.well_hgt = 15
 end
 
 function _update()
@@ -424,6 +542,7 @@ function _update()
 			globals.title_state = "Practice"
 		end
 
+	-- game type selection
 	elseif(globals.state == "Select Mode") then
 		if(btnp(4)) then
 			if(globals.title_state == "2 Player") then
@@ -493,8 +612,17 @@ function _draw()
 	if(globals.state == "Title") then
 		local margin = 4
 		print("gem hunter", 48, margin)
+
+		-- draw gems on the title screen
+		for i=1,2 do
+			for j=1,4 do
+				spr(64+(i-1)+16*(j-1), 32+8*i, 40+8*j)
+				spr(66+(i-1)+16*(j-1), 72+8*i, 40+8*j)
+			end
+		end
+
 		print("press z to start", 36, 104)
-		print("v0.5.2", 105-margin, 123-margin)
+		print("v0.6.0", 105-margin, 123-margin)
 
 	elseif(globals.state == "Select Mode") then
 		local margin = 4
@@ -530,8 +658,8 @@ function _draw()
 	elseif(globals.state == "2 Player Game") then
 
 		-- draw blocks in the well
-		for i=1,6 do
-			for j=1,15 do
+		for i=1,globals.well_len do
+			for j=1,globals.well_hgt do
 				spr(globals.p1.well[i][j], 8*(i-1), 8+8*(j-1))
 				spr(globals.p2.well[i][j], 8+72+8*(i-1), 8+8*(j-1))
 			end
@@ -551,13 +679,10 @@ function _draw()
 
 		-- draw the next columns for the players
 		print("next", 56, 8)
-		spr(globals.p1.column_next[1], 48, 16)
-		spr(globals.p1.column_next[2], 48, 24)
-		spr(globals.p1.column_next[3], 48, 32)
-
-		spr(globals.p2.column_next[1], 72, 16)
-		spr(globals.p2.column_next[2], 72, 24)
-		spr(globals.p2.column_next[3], 72, 32)
+		for i=1,3 do
+			spr(globals.p1.column_next[i], 48, 16+8*(i-1))
+			spr(globals.p2.column_next[i], 72, 16+8*(i-1))
+		end
 
 		-- draw the current scores
 		print("score", 56, 48)
@@ -581,18 +706,29 @@ function _draw()
 		end
 
 		if not(globals.p1.clear_process) then
-			spr(globals.p1.column.sprites[1], globals.p1.column.x, globals.p1.column.y)
-			spr(globals.p1.column.sprites[2], globals.p1.column.x, globals.p1.column.y+8)
-			spr(globals.p1.column.sprites[3], globals.p1.column.x, globals.p1.column.y+16)
+			for i=1,3 do
+				spr(globals.p1.column.sprites[i], globals.p1.column.x, globals.p1.column.y+8*(i-1))
+			end
+			--spr(globals.p1.column.sprites[1], globals.p1.column.x, globals.p1.column.y)
+			--spr(globals.p1.column.sprites[2], globals.p1.column.x, globals.p1.column.y+8)
+			--spr(globals.p1.column.sprites[3], globals.p1.column.x, globals.p1.column.y+16)
 		end
 
 		-- draw the next columns for the players
 		print("next", 56, 8)
-		spr(globals.p1.column_next[1], 48, 16)
-		spr(globals.p1.column_next[2], 48, 24)
-		spr(globals.p1.column_next[3], 48, 32)
+		for i=1,3 do
+			spr(globals.p1.column_next[i], 48, 16+8*(i-1))
+		end
 
-		-- display victory
+		for i=1,3 do
+			spr(49, 80 + 16 * (i-1), 8)
+			for j=1,14 do
+				spr(50, 80 + 16 * (i-1), 8+8*j)
+			end
+			spr(51, 80 + 16 * (i-1), 120)
+		end
+
+		-- display game over state
 		if(globals.game_state == "p2 victory") then
 			print("game over", 50, 64)
 			print("press 'z'", 50, 88)
@@ -625,6 +761,46 @@ __gfx__
 0000000088888888aaaaaaaabbbbbbbb111111110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000788888877aaaaaa77bbbbbb7711111170000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 000000007788887777aaaa7777bbbb77771111770000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000777777770707007007070070000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000700000070707007007070070000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000077777700707007007070070000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000070700700707007007070070000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000070700700707007007070070000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000070700700707007007777770000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000070700700707007070000007000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000070700700707007077777777000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000c700000000033333333377700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000cc77000000033b33bbbbbbbb70000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000c1c7c70000033333bbbbbbbb777000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000c1cc7cc700003333bbbbbbbb7bb7000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000c1c1c7ccc700033333bbbbbb7bbb7000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00c1c11c7ccc770033330b00707bbbb7000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0c111c1c7c7ccc703330bbb77707bbb7000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+10c111c117c7c7c73330bbb00777bbb7000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+100c1c17707c7cc73330bb0b0077bbb7000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+1100c1717707cc773030bb000077bbb7000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+1110c1110707c7c73000b0b00007bbb7000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+1000c1100007ccc73000bb000007b777000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+1000c1100007ccc73300b00000077777000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+1100c0111007c7c73330b000000777b7000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+1000c01100077cc73330b0000007bbb7000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+1000c00000c7ccc73300b0000007bbb7000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+11001000ccccccc73300b000000bbbbb000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+11001011c00cccc73330b000000bbbbb000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+10101110011cc77733003000000bbb7b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+10001001111c77c730003000000bb7bb000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+11101111011cccc730003000000b7bbb000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+11001c00011cccc730303000000bbbbb000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+10001cc0111c7cc733303300000bbbbb000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+100101cc11ccc7c733003030000bbbbb000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+1010001c1ccccc7730003300000bbbbb000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+01001001cc1c1cc033303030300bb3bb000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00100001c1c11c003330030300b33bbb000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00010011ccc1c000330330bbbb3333bb000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00001001c11c00003030303333333b3b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000101c1c00000333303333333333b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000011cc00000003333333333333b0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000001c00000000033333333333b00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __label__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
