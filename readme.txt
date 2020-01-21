@@ -1,8 +1,8 @@
 Gem Hunter
-Version 0.5.2
+Version 0.6.1
 
-Copyright © 2019 Elias Mote
-Copyright © 2019 Roc Studios
+Copyright © 2019-2020 Elias Mote
+Copyright © 2019-2020 Roc Studios
 
 I. Disclaimer
 II. Version History
@@ -22,7 +22,15 @@ strictly prohibited, and a violation of copyright.
 II. Version History
 
 ------------------------
-V0.6.0 - Current Version
+V0.6.1
+------------------------
+------------------------------------------------ Bug fixes ----------------------------------------------
+- Fixed a bug where the crush point score was accidentally adding extra points for some block combinations
+- Fixed a bug where crush bars weren't always being added correctly (crush level being > 3 and # of new crush
+bars was >= 2)
+
+------------------------
+V0.6.0
 ------------------------
 -- Changed block removal algorithm (should work correctly, could use further testing)
 

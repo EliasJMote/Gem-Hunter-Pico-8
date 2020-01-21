@@ -61,7 +61,7 @@ function check_rows(p)
 			--if not check_del_blks(x,y,d_b) then
 			
 				-- check for a vertical row
-				if(blk_clr ~= 0 and blk_clr ~= 17) then
+				if(blk_clr ~= 0 and blk_clr ~= 7) then
 
 					-- if the two blocks above are the same
 					if(p.well[x][y+1] == blk_clr and p.well[x][y+2] == blk_clr) then
@@ -96,7 +96,7 @@ function check_rows(p)
 			local blk_clr = p.well[x][y]
 
 			-- check for a horizontal row
-			if(blk_clr ~= 0 and blk_clr ~= 17) then
+			if(blk_clr ~= 0 and blk_clr ~= 7) then
 
 				-- if 2 blocks to the right are the same, mark the row for deletion
 				if(p.well[x+1][y] == blk_clr and p.well[x+2][y] == blk_clr) then
@@ -128,7 +128,7 @@ function check_rows(p)
 			local blk_clr = p.well[x][y]
 
 			-- check for a diagonal row
-			if(blk_clr ~= 0 and blk_clr ~= 17) then
+			if(blk_clr ~= 0 and blk_clr ~= 7) then
 				if(p.well[x+1][y+1] == blk_clr and p.well[x+2][y+2] == blk_clr) then
 
 					-- if 2 blocks to the lower right are the same, mark the row for deletion
@@ -174,7 +174,7 @@ function check_rows(p)
 			local blk_clr = p.well[x][y]
 
 			-- check for a diagonal row
-			if(blk_clr ~= 0 and blk_clr ~= 17) then
+			if(blk_clr ~= 0 and blk_clr ~= 7) then
 
 				-- if 2 blocks to the upper right are the same, mark the row for deletion
 				if(p.well[x+1][y-1] == blk_clr and p.well[x+2][y-2] == blk_clr) then
@@ -212,6 +212,20 @@ function check_rows(p)
 		end
 	end
 
+    -- remove duplicates
+    local no_dup = {}
+    for i in all(d_b) do
+        local is_dup = false
+        for j in all(no_dup) do
+            if (i.x == j.x and i.y == j.y) then
+                is_dup = true
+            end
+        end
+        if not is_dup then add(no_dup,i) end
+    end
+
+    d_b = no_dup
+
 	return d_b
 end
 
@@ -236,22 +250,24 @@ function clear_rows(p)
 end
 
 function add_crush_levels(p,crush_levels,x)
+    -- update the number of crush bar levels for the player
+    p.crush_bar_level += crush_levels
+
 	-- first, copy blocks up by the number of crush levels
 	for i=1,6 do
-		for j=0+crush_levels,14 do
+		for j=crush_levels,globals.well_hgt do
 			p.well[i][j] = p.well[i][j+crush_levels]
 		end
 	end
 
 	-- next, setup gray crush bars for each crush level
 	for i=1,6 do
-		for j=16-p.crush_bar_level, 15-p.crush_bar_level-crush_levels+1, -1 do
-			p.well[i][j] = 17
+		for j=globals.well_hgt-crush_levels+1, globals.well_hgt do
+			p.well[i][j] = 7
 		end
 	end
 
-	-- update the number of crush bar levels for the player
-	p.crush_bar_level += crush_levels
+	
 
 	-- create a new column for the player
 	p = create_new_column(p,x)
@@ -261,22 +277,35 @@ end
 
 -- function remove_crush_levels
 function remove_crush_levels(p,crush_levels)
-	-- first, copy blocks down by the number of crush levels
-	for i=1,6 do
-		for j=crush_levels,15 do
-			p.well[i][j] = p.well[i][j-crush_levels]
-		end
-	end
 
-	-- next, clear the top number of crush levels
+    -- compare the number of crush levels by the current crush bar level
+    -- if the number of crush levels is greater than the current crush bar level,
+    -- set the number to crush levels to the current crush bar level
+    if(crush_levels > p.crush_bar_level) then
+        crush_levels = p.crush_bar_level
+    end
+
+	-- clear the bottom number of crush levels
+    --[[
 	for i=1,6 do
-		for j=1,crush_levels  do
+		for j=globals.well_hgt-crush_levels+1,globals.well_hgt do
 			p.well[i][j] = 0
 		end
 	end
+    ]]
+
+    -- copy blocks down by the number of crush levels
+    for i=1,6 do
+        for j=globals.well_hgt,crush_levels,-1 do
+            if(p.well[i][j] ~= 0) then
+                p.well[i][j] = p.well[i][j-crush_levels]
+            end
+        end
+    end
 
 	-- update the number of crush bar levels for the player
 	p.crush_bar_level -= crush_levels
+    if(p.crush_bar_level < 0) then p.crush_bar_level = 0 end
 
 	return p
 end
@@ -325,7 +354,7 @@ function init_player(p, x, player)
 	end
 
 	-- current score
-	p.score = 0
+	p.score = 30
 
 	-- 6 x 15
 	p.well = {
@@ -368,8 +397,13 @@ function update_player(p, x)
 
 	-- normal gameplay
 	if not (p.clear_process) then
+
+        -- each second or when the player pushes down, 
 		if(p.timer == 30 or btnp(3, p.player)) then
+
 			if(p.column.y < 32+72 and p.well[(p.column.x-x)/8+1][p.column.y/8+3] == 0) then
+
+                -- advance the column down one row and reset the timer
 				p.column.y += 8
 				p.timer = 0
 			else
@@ -379,12 +413,14 @@ function update_player(p, x)
 				p.well[(p.column.x-x)/8+1][p.column.y/8+1] = p.column.sprites[2]
 				p.well[(p.column.x-x)/8+1][p.column.y/8+2] = p.column.sprites[3]
 
+                -- check the rows to mark blocks to be deleted
 				p.del_blks = check_rows(p)
 
 				if(#p.del_blks ~= 0) then
 					p.clear_process = true
 					p.timer = 30
 					sfx(1)
+                    printh(#p.del_blks)
 				else
 					-- create a new column
 					p = create_new_column(p,x)
@@ -397,25 +433,25 @@ function update_player(p, x)
 
 		if(p.timer == 30) then
 			for x in all(p.del_blks) do
-				p.well[x["x"]][x["y"]] = 5
+				p.well[x["x"]][x["y"]] = 12
 			end
 		end
 
 		if(p.timer == 35) then
 			for x in all(p.del_blks) do
-				p.well[x["x"]][x["y"]] = 6
+				p.well[x["x"]][x["y"]] = 13
 			end
 		end
 
 		if(p.timer == 40) then
 			for x in all(p.del_blks) do
-				p.well[x["x"]][x["y"]] = 7
+				p.well[x["x"]][x["y"]] = 14
 			end
 		end
 
 		if(p.timer == 45) then
 			for x in all(p.del_blks) do
-				p.well[x["x"]][x["y"]] = 8
+				p.well[x["x"]][x["y"]] = 15
 			end
 		end
 
@@ -429,7 +465,6 @@ function update_player(p, x)
 					p.score = 30
 				end
 			end
-
 
 			-- check if new blocks can be removed
 			p.del_blks = check_rows(p)
@@ -472,7 +507,7 @@ function update_player(p, x)
 	end
 
 	-- activate crush
-	if(globals.state ~= "Practice") then
+	if(globals.state ~= "practice") then
 		if(btnp(5, p.player) and p.score >= 10) then
 			--p.crush_process = true
 
@@ -490,6 +525,13 @@ function update_player(p, x)
 				globals.p1 = add_crush_levels(globals.p1, crush_levels, 0)
 			end
 
+            -- remove any existing crush levels from the current player
+            if(p.player == 0) then
+                globals.p1 = remove_crush_levels(globals.p1, crush_levels)
+            else
+                globals.p2 = remove_crush_levels(globals.p2, crush_levels)
+            end
+
 			--p.crush_process = false
 		end
 	end
@@ -499,7 +541,7 @@ end
 
 -- init game
 function init_game()
-	if(globals.state == "2 Player Game") then
+	if(globals.state == "1 player game") then
 		--globals.players = {}
 
 		globals.p1 = {}
@@ -508,7 +550,12 @@ function init_game()
 		globals.p1 = init_player(globals.p1, 32, 0)
 		globals.p2 = init_player(globals.p2, 112, 1)
 
-	elseif(globals.state == "Practice") then
+    elseif(globals.state ==  "2 player game") then
+        globals.p1 = {}
+
+        globals.p1 = init_player(globals.p1, 32, 0)
+
+	elseif(globals.state == "practice") then
 		globals.p1 = {}
 
 		globals.p1 = init_player(globals.p1, 32, 0)
@@ -521,7 +568,7 @@ function _init()
 	globals = {}
 
 	-- setup initial state
-	globals.state = "Title"
+	globals.state = "title"
 
 	-- setup initial gameplay state
 	globals.game_state = "gameplay"
@@ -536,54 +583,57 @@ end
 function _update()
 	--for k,v in pairs(globals) do
 
-	if(globals.state == "Title") then
+	if(globals.state == "title") then
 		if(btnp(4)) then 
-			globals.state = "Select Mode"
-			globals.title_state = "Practice"
+			globals.state = "select mode"
+			globals.title_state = "1 player"
 		end
 
 	-- game type selection
-	elseif(globals.state == "Select Mode") then
+	elseif(globals.state == "select mode") then
 		if(btnp(4)) then
-			if(globals.title_state == "2 Player") then
-				globals.state = "2 Player Game"
+            if(globals.title_state == "1 player") then
+                globals.state = "1 player game"
+                init_game()
+			elseif(globals.title_state == "2 player") then
+				globals.state = "2 player game"
 				init_game()
-			elseif(globals.title_state == "Practice") then
-				globals.state = "Practice"
+			elseif(globals.title_state == "practice") then
+				globals.state = "practice"
 				init_game()
 			end
 		end
 
 		-- if the player pushes up
 		if(btnp(2)) then
-			if(globals.title_state == "1 Player") then
-				globals.title_state = "Options"
-			elseif(globals.title_state == "2 Player") then
-				globals.title_state = "1 Player"
-			elseif(globals.title_state == "Practice") then
-				globals.title_state = "2 Player"
-			elseif(globals.title_state == "Options") then
-				globals.title_state = "Practice"
+			if(globals.title_state == "1 player") then
+				globals.title_state = "options"
+			elseif(globals.title_state == "2 player") then
+				globals.title_state = "1 player"
+			elseif(globals.title_state == "practice") then
+				globals.title_state = "2 player"
+			elseif(globals.title_state == "options") then
+				globals.title_state = "practice"
 			end
 
 		-- if the player pushes down
 		elseif(btnp(3)) then
-			if(globals.title_state == "1 Player") then
-				globals.title_state = "2 Player"
-			elseif(globals.title_state == "2 Player") then
-				globals.title_state = "Practice"
-			elseif(globals.title_state == "Practice") then
-				globals.title_state = "Options"
-			elseif(globals.title_state == "Options") then
-				globals.title_state = "1 Player"
+			if(globals.title_state == "1 player") then
+				globals.title_state = "2 player"
+			elseif(globals.title_state == "2 player") then
+				globals.title_state = "practice"
+			elseif(globals.title_state == "practice") then
+				globals.title_state = "options"
+			elseif(globals.title_state == "options") then
+				globals.title_state = "1 player"
 			end
 		end
 
 
-	elseif(globals.state == "1 Player Game") then
+	elseif(globals.state == "1 player game") then
 		globals.p1 = update_player(globals.p1, 0)
 
-	elseif(globals.state == "2 Player Game") then
+	elseif(globals.state == "2 player game") then
 		--globals.timer = (globals.timer + 1) % 32000
 		if(globals.game_state == "gameplay") then
 			globals.p1 = update_player(globals.p1, 0)
@@ -593,7 +643,7 @@ function _update()
 				init_game()
 			end
 		end
-	elseif(globals.state == "Practice") then
+	elseif(globals.state == "practice") then
 
 		if(globals.game_state == "gameplay") then
 			globals.p1 = update_player(globals.p1, 0)
@@ -609,7 +659,7 @@ function _draw()
 	cls()
 
 
-	if(globals.state == "Title") then
+	if(globals.state == "title") then
 		local margin = 4
 		print("gem hunter", 48, margin)
 
@@ -622,46 +672,93 @@ function _draw()
 		end
 
 		print("press z to start", 36, 104)
-		print("v0.6.0", 105-margin, 123-margin)
+		print("v0.6.1", 105-margin, 123-margin)
 
-	elseif(globals.state == "Select Mode") then
+	elseif(globals.state == "select mode") then
 		local margin = 4
 
 		print("select game mode", 38, margin)
-		if(globals.title_state == "1 Player") then
+		if(globals.title_state == "1 player") then
 			color(8)
 		end
 		print("1 player (unfinished)", 36, 48)
 		color(7)
 
-		if(globals.title_state == "2 Player") then
+		if(globals.title_state == "2 player") then
 			color(8)
 		end
 		print("2 player", 36, 64)
 		color(7)
 
-		if(globals.title_state == "Practice") then
+		if(globals.title_state == "practice") then
 			color(8)
 		end
 		print("practice", 36, 80)
 		color(7)
 
-		if(globals.title_state == "Options") then
+		if(globals.title_state == "options") then
 			color(8)
 		end
 		print("options (unfinished)", 36, 96)
 		color(7)
 
-	elseif(globals.state == "1 Player Game") then
+	elseif(globals.state == "1 player game") then
+            -- draw blocks in the well
+            rect(0,7,47,127,7)
+            rect(8+72,7,8+72+47,127,7)
 
+            for i=1,globals.well_len do
+                for j=1,globals.well_hgt do
+                    if(globals.p1.well[i][j] ~= 0) spr(globals.p1.well[i][j], 8*(i-1), 8+8*(j-1))
+                    if(globals.p2.well[i][j] ~= 0) spr(globals.p2.well[i][j], 8+72+8*(i-1), 8+8*(j-1))
+                end
+            end
 
-	elseif(globals.state == "2 Player Game") then
+            if not(globals.p1.clear_process) then
+                spr(globals.p1.column.sprites[1], globals.p1.column.x, globals.p1.column.y)
+                spr(globals.p1.column.sprites[2], globals.p1.column.x, globals.p1.column.y+8)
+                spr(globals.p1.column.sprites[3], globals.p1.column.x, globals.p1.column.y+16)
+            end
+            
+            if not(globals.p2.clear_process) then
+                spr(globals.p2.column.sprites[1], globals.p2.column.x, globals.p2.column.y)
+                spr(globals.p2.column.sprites[2], globals.p2.column.x, globals.p2.column.y+8)
+                spr(globals.p2.column.sprites[3], globals.p2.column.x, globals.p2.column.y+16)
+            end
+
+            -- draw the next columns for the players
+            print("next", 56, 8)
+            for i=1,3 do
+                spr(globals.p1.column_next[i], 48, 16+8*(i-1))
+                spr(globals.p2.column_next[i], 72, 16+8*(i-1))
+            end
+
+            -- draw the current scores
+            print("score", 56, 48)
+            print(globals.p1.score, 48, 56)
+            print(globals.p2.score, 72, 56)
+
+            print("crush", 56, 72)
+            print(globals.p1.crush_bar_level, 48, 80)
+            print(globals.p2.crush_bar_level, 72, 80)
+
+            -- display victory
+            if(globals.game_state == "p1 victory") then
+                print("p1 wins", 50, 96)
+            elseif(globals.game_state == "p2 victory") then
+                print("p2 wins", 50, 96)
+            end
+
+	elseif(globals.state == "2 player game") then
 
 		-- draw blocks in the well
+        rect(0,7,47,127,7)
+        rect(8+72,7,8+72+47,127,7)
+
 		for i=1,globals.well_len do
 			for j=1,globals.well_hgt do
-				spr(globals.p1.well[i][j], 8*(i-1), 8+8*(j-1))
-				spr(globals.p2.well[i][j], 8+72+8*(i-1), 8+8*(j-1))
+                if(globals.p1.well[i][j] ~= 0) spr(globals.p1.well[i][j], 8*(i-1), 8+8*(j-1))
+				if(globals.p2.well[i][j] ~= 0) spr(globals.p2.well[i][j], 8+72+8*(i-1), 8+8*(j-1))
 			end
 		end
 
@@ -689,19 +786,25 @@ function _draw()
 		print(globals.p1.score, 48, 56)
 		print(globals.p2.score, 72, 56)
 
+        print("crush", 56, 72)
+        print(globals.p1.crush_bar_level, 48, 80)
+        print(globals.p2.crush_bar_level, 72, 80)
+
 		-- display victory
 		if(globals.game_state == "p1 victory") then
-			print("p1 wins", 50, 80)
+			print("p1 wins", 50, 96)
 		elseif(globals.game_state == "p2 victory") then
-			print("p2 wins", 50, 80)
+			print("p2 wins", 50, 96)
 		end
 
-	elseif(globals.state == "Practice") then
+	elseif(globals.state == "practice") then
+
+        rect(0,7,47,127,7)
 
 		-- draw blocks in the well
 		for i=1,6 do
 			for j=1,15 do
-				spr(globals.p1.well[i][j], 8*(i-1), 8+8*(j-1))
+				if(globals.p1.well[i][j] ~= 0) spr(globals.p1.well[i][j], 8*(i-1), 8+8*(j-1))
 			end
 		end
 
@@ -720,7 +823,7 @@ function _draw()
 			spr(globals.p1.column_next[i], 48, 16+8*(i-1))
 		end
 
-		for i=1,3 do
+		for i=2,3 do
 			spr(49, 80 + 16 * (i-1), 8)
 			for j=1,14 do
 				spr(50, 80 + 16 * (i-1), 8+8*j)
@@ -737,30 +840,30 @@ function _draw()
 	end
 end
 __gfx__
-7777777777888877777a97777733337777cccc7777000077770000777700107777800b7700000000770880770000000000000000000000000000000000000000
-700000077888ff8770aa7a077377b3377c77ccc7700000077000000770a00007780000b700000000708778070000000000000000000000000000000000000000
-7000000788888f887aa99aa73b7bb3b37771ccc7000000000000100000000b008000000b00000000008778000000000000000000000000000000000000000000
-70000007888888889997a999303bb3b3771ccc17000a10000a000000800000000000000000000000087887800000000000000000000000000000000000000000
-700000078e888888aa9aa99a303bbb337ccccc17000b8000000000800000000a0000000000000000088778800000000000000000000000000000000000000000
-700000078ee888887aa99997303bb30371ccc1170000000000070000000008001000000a00000000087777800000000000000000000000000000000000000000
-7000000778ee888770aa990773b300377ccc111770000007700000077b000007710000a700000000788888870000000000000000000000000000000000000000
-7777777777888877777997777733337777c1117777000077770000777701007777100a7700000000770000770000000000000000000000000000000000000000
-00000000775555770000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000755555570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000555555550000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000550550550000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000550550550000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000555555550000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000755555570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000775555770000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000000007788887777aaaa7777bbbb77771111770000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000788888877aaaaaa77bbbbbb7711111170000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000088888888aaaaaaaabbbbbbbb111111110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000088088088aa0aa0aabb0bb0bb110110110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000088088088aa0aa0aabb0bb0bb110110110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000088888888aaaaaaaabbbbbbbb111111110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000788888877aaaaaa77bbbbbb7711111170000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000000007788887777aaaa7777bbbb77771111770000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000888800000a90000033330000cccc000000000000000000005555000000000000000000000000000000000000000000000000000000100000800b00
+000000000888ff8000aa7a000377b3300c77ccc000000000000000000555775000000000000000000000000000000000000000000000000000a00000080000b0
+0000000088888f880aa99aa03b7bb3b30771ccc000000000000000005555575500000000000000000000000000000000000000000000100000000b008000000b
+00000000888888889997a999303bb3b3071ccc1000000000000000005555555500000000000000000000000000000000000a10000a0000008000000000000000
+000000008e888888aa9aa99a303bbb330ccccc1000000000000000005655555500000000000000000000000000000000000b8000000000800000000a00000000
+000000008ee888880aa99990303bb30301ccc110000000000000000056655555000000000000000000000000000000000000000000070000000008001000000a
+0000000008ee888000aa990003b300300ccc11100000000000000000056655500000000000000000000000000000000000000000000000000b000000010000a0
+0000000000888800000990000033330000c111000000000000000000005555000000000000000000000000000000000000000000000000000001000000100a00
+000000000088880000aaaa0000bbbb00001111000000000000000000005555000000000000000000000880000000000000000000000000000000000000000000
+00000000088888800aaaaaa00bbbbbb0011111100000000000000000055555500000000000000000008778000000000000000000000000000000000000000000
+0000000088888888aaaaaaaabbbbbbbb111111110000000000000000555555550000000000000000008778000000000000000000000000000000000000000000
+0000000088088088aa0aa0aabb0bb0bb110110110000000000000000550550550000000000000000087887800000000000000000000000000000000000000000
+0000000088088088aa0aa0aabb0bb0bb110110110000000000000000550550550000000000000000088778800000000000000000000000000000000000000000
+0000000088888888aaaaaaaabbbbbbbb111111110000000000000000555555550000000000000000087777800000000000000000000000000000000000000000
+00000000088888800aaaaaa00bbbbbb0011111100000000000000000055555500000000000000000088888800000000000000000000000000000000000000000
+000000000088880000aaaa0000bbbb00001111000000000000000000005555000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000777777770707007007070070000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000700000070707007007070070000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000077777700707007007070070000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
