@@ -22,6 +22,14 @@ strictly prohibited, and a violation of copyright.
 II. Version History
 
 ------------------------
+V0.6.1.1
+------------------------
+------------------------------------------------- Hotfixes ----------------------------------------------
+- 1 player mode was accidentally enabled. I've disabled it since it's not ready.
+- Fixed a bug where 2 player mode wouldn't work (since player 2 wasn't being created)
+- Fixed player scores back to 0.
+
+------------------------
 V0.6.1
 ------------------------
 ------------------------------------------------ Bug fixes ----------------------------------------------

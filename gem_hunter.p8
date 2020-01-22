@@ -354,7 +354,7 @@ function init_player(p, x, player)
 	end
 
 	-- current score
-	p.score = 30
+	p.score = 0
 
 	-- 6 x 15
 	p.well = {
@@ -552,8 +552,10 @@ function init_game()
 
     elseif(globals.state ==  "2 player game") then
         globals.p1 = {}
+        globals.p2 = {}
 
         globals.p1 = init_player(globals.p1, 32, 0)
+        globals.p2 = init_player(globals.p2, 112, 1)
 
 	elseif(globals.state == "practice") then
 		globals.p1 = {}
@@ -593,8 +595,8 @@ function _update()
 	elseif(globals.state == "select mode") then
 		if(btnp(4)) then
             if(globals.title_state == "1 player") then
-                globals.state = "1 player game"
-                init_game()
+                --globals.state = "1 player game"
+                --init_game()
 			elseif(globals.title_state == "2 player") then
 				globals.state = "2 player game"
 				init_game()
@@ -672,7 +674,7 @@ function _draw()
 		end
 
 		print("press z to start", 36, 104)
-		print("v0.6.1", 105-margin, 123-margin)
+		print("v0.6.1.1", 101-margin, 123-margin)
 
 	elseif(globals.state == "select mode") then
 		local margin = 4
