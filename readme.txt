@@ -1,5 +1,5 @@
 Gem Hunter
-Version 0.6.1
+Version 0.7.0
 
 Copyright © 2019-2020 Elias Mote
 Copyright © 2019-2020 Roc Studios
@@ -20,6 +20,16 @@ author. Placement of this readme or game on any other web site or as a part of a
 strictly prohibited, and a violation of copyright.
 
 II. Version History
+
+------------------------
+V0.7.0
+------------------------
+------------------------------------------------- Updates -----------------------------------------------
+- Added arrow columns!
+-- Up arrow will create three rows of gray blocks for opponent.
+-- Middle block destroys all blocks of the block color it lands on
+-- Down arrow will remove three rows of gray blocks for the player activating it.
+- Both players will now correctly have the same series of columns.
 
 ------------------------
 V0.6.1.1
