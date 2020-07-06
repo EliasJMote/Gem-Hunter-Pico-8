@@ -1,5 +1,5 @@
 Gem Hunter
-Version 0.7.0
+Version 0.7.1
 
 Copyright © 2019-2020 Elias Mote
 Copyright © 2019-2020 Roc Studios
@@ -20,6 +20,15 @@ author. Placement of this readme or game on any other web site or as a part of a
 strictly prohibited, and a violation of copyright.
 
 II. Version History
+
+------------------------
+V0.7.1 - Current version
+------------------------
+------------------------------------------------- Updates -----------------------------------------------
+- Added character selection screen
+- Instant drop using the up key
+- Added gem rain opening cinematic
+- Added Roc Studios opening logo
 
 ------------------------
 V0.7.0
@@ -141,7 +150,7 @@ with blocks before your well is filled. Combos grant you points that you can use
 to disrupt your opponent and reduce their well size while increasing yours at the
 same time.
 
-IV. Controls
+IV. Controls (Default)
 Player 1:
 - Use the left and right keys to move the falling columns left and right, respectively
 - Use the down key to drop the column faster
@@ -167,5 +176,6 @@ Game jolt page: gamejolt.com/@Roc_Studios
 
 VI. Credits
 Created by: Elias Mote
+Treasure Takers characters owned by: David Harper
 Engine: Pico-8
 Programming language: Lua
